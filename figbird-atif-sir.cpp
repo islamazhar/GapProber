@@ -1575,7 +1575,7 @@ class GapFiller
 
     long int startPos, endPos;
 
-	char gapFileName[500];
+	char *gapFileName;
 
     char *concensus;
 	
@@ -1589,7 +1589,7 @@ public:
         
         int maxSize=maxGap+2*maxDistance;
         
-        
+        gapFileName = new char[500];
         concensus=new char[maxGap+1];
         
         countsGap=new double *[maxSize];
@@ -1855,10 +1855,9 @@ public:
 	    
 		char *qname1,*qname2;
 	    
-	    char *line1= new char[MAX_REC_LEN];
-		char *line2= new char[MAX_REC_LEN];
+	    
 	
-		int MAX_FILE_READ=MAX_REC_LEN/sizeof(line1[0]);
+		int MAX_FILE_READ=MAX_REC_LEN/sizeof(char);
 	    
 	    
 		char * temp;
@@ -1889,7 +1888,9 @@ public:
 	     
 	    }
 	    
-	    
+	    char *line1= new char[MAX_REC_LEN];
+		char *line2= new char[MAX_REC_LEN];
+
 	    while(fgets(line1, MAX_FILE_READ, scaffoldMap)!=NULL)
 		{
 			
@@ -1902,6 +1903,9 @@ public:
 	        
 	        
 			qname1=strtok(line1,"\t");
+			delete [] line1;
+			qname2=strtok(line2,"\t");
+			delete [] line2;
 			
 	        temp=strtok(NULL,"\t");
 	        flag1=atoi(temp);
@@ -1945,7 +1949,7 @@ public:
 			
 	        //second of the pair
 	        
-			qname2=strtok(line2,"\t");
+			
 			temp=strtok(NULL,"\t");
 			flag2=atoi(temp);
 			
@@ -2167,8 +2171,8 @@ public:
 	*/        
 	    }
 	    
-	    delete [] line1;
-	    delete [] line2;
+	    if(line1 != NULL) delete [] line1;
+	    if(line2 != NULL) delete [] line2;
 	    
 	    fclose(scaffoldMap);
 	    
@@ -2653,7 +2657,7 @@ public:
             delete [] probsGap[i];
             delete [] errorProbsGap[i];
         }
-        
+        delete [] gapFileName;
         delete [] countsGap;
         delete [] probsGap;
         delete [] errorProbsGap;
