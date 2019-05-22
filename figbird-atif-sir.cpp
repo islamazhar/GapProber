@@ -1686,6 +1686,9 @@ public:
 	    {
 	        for(int j=0;j<5;j++)
 	        {
+	            /*
+	             * Write down the works of countsGap, probsGap, errorProbsGap.
+	             */
 	            countsGap[i][j]=0;
 	            probsGap[i][j]=0;
 	            errorProbsGap[i][j]=0;
@@ -1971,6 +1974,7 @@ public:
 			insertSize2=atoi(temp);
 	        
 			readString2=strtok(NULL,"\t");
+			// what is insertSIze 1 and insertSize 2??
 	        
 	  /*
 	        
@@ -2010,22 +2014,24 @@ public:
 	        {
 	          
 	            insertSize=gapStart-pos1+readLength2;
-	        
+	            // for(tempInsertSize = gapStart - pos1 + 1; tempInsertSize < gapStart - pos1 + readLength2 + gapLength; tempInsertSize++)
 	            for(long int i=gapStart-readLength2+1;i<gapStart+gapLength;i++)
 	            {
-	                
 	                tempInsertSize=insertSize+i-gapStart;
 	                if(tempInsertSize<insertThresholdMin || tempInsertSize > insertThresholdMax)
-	                    continue;
+	                    continue; // It this condition true or because it becomes true... index  -ve value is never
+	                    // reached.
 	                
 	                tempProb=insertLengthDistSmoothed[tempInsertSize];
 	                tempMatch=0;
 	                
 	                for(int j=0;j<readLength2;j++)
 	                {
-	                    
 	                    charCode=charCodes[readString2[j]];
 	                    index=i+j-startPos;
+
+	                    /// gapStart - readLength2 + 1 + i + j - gapStart + 200
+	                    /// doesn't index becomes -ve?
 	                    
 	                    if(isReverse==1)
 	                	{
@@ -2036,11 +2042,11 @@ public:
 							readIndex=j;
 						}
 	                    
-	                    if(charCode<4)
+	                    if(charCode<4) // means a A,G, T, C is placed here?
 	                    {
 	                        tempProb*=(probsGap[index][charCode]*(1-errorPosDist[readIndex])+errorPosDist[readIndex]*errorProbsGap[index][charCode]);
 	                    }
-	                    else
+	                    else // means  a N is placed here?
 	                    {
 	                        tempProb*=errorPosDist[readIndex]*errorProbsGap[index][4];
 	                    }
@@ -2086,7 +2092,7 @@ public:
 	                
 	                for(int j=0;j<readLength2;j++)
 	                {
-	                    
+	                    // charCodes is an mapping A -> 0, E -> 1, I -> 2, U ->3 , others ->4
 	                    charCode=charCodes[readString2[j]];
 	                    index=i+j-startPos;
 	                    
@@ -2417,7 +2423,6 @@ public:
 	       
 	        if(pos1<gapStart)
 	        {
-	          
 	            insertSize=gapStart-pos1+readLength2;
 	        
 	            for(long int i=gapStart-readLength2+1;i<gapStart+gapLength;i++)
@@ -2601,7 +2606,7 @@ public:
            
         bestString[0]='\0';
 		secondBestString[0]='\0';
-           
+        // for (gapEstimate = gapMin; gapEstimate<=gapMax;gapEstimate ++){
         for(int j=0;j<(gapMax-gapMin+1);j++)
         {
         
@@ -2673,6 +2678,105 @@ public:
 };
 
 
+int readContigs( char* contigFileName, vector<char*> &contigs, vector<long int> &contigLengths;) {
+
+    long int bufferLength=1024;
+    int read;
+    char *contig=new char[bufferLength];
+    contig[0]='\0';
+    char *newcontig;
+
+    contigLength=0;
+
+
+    long int tempContigLength=0;
+    char *contigName;
+    contigFile=fopen(contigFileName, "r");
+    if (contigFile == NULL)
+    {
+        printf("Can't open contig file\n");
+        return -1;
+    }
+
+    char *line= new char[MAX_REC_LEN];
+
+    while(fgets(line, MAX_REC_LEN, contigFile)!=NULL)
+    {
+        if(line[0]==';')
+        {
+            continue;
+        }
+        else if(line[0]=='>')
+        {
+            contigName=new char[strlen(line)];
+            strcpy(contigName,line+1);
+            contigName[strlen(contigName)-1]='\0';
+            contigNames.push_back(strtok(contigName," \t\n"));
+            if(contigLength>0)
+            {
+                noContigs++;
+                contigs.push_back(contig);
+                contigLengths.push_back(contigLength);
+                totalContigLength+=contigLength;
+                contigLength=0;
+                bufferLength=1024;
+                contig=new char[bufferLength];
+                contig[0]='\0';
+            }
+        }
+        else
+        {
+            read=strlen(line);
+            tempContigLength=contigLength;
+            if(read<MAX_REC_LEN-1)
+            {
+                contigLength+=(read-1);
+            }
+            else
+            {
+                contigLength+=MAX_REC_LEN-1;
+                read++;
+
+            }
+            if(contigLength>bufferLength)
+            {
+                bufferLength=max(bufferLength*2,contigLength+1);
+                newcontig=new char[bufferLength];
+                strcpy(newcontig,contig);
+                line[read-1]='\0';
+                strcat(newcontig, line);
+                delete []contig;
+                contig=newcontig;
+            }
+            else
+            {
+                line[read-1]='\0';
+                strcpy(contig+tempContigLength, line);
+            }
+
+        }
+
+    }
+    noContigs++;
+    contigs.push_back(contig);
+    contigLengths.push_back(contigLength);
+    totalContigLength+=contigLength;
+
+
+    fclose(contigFile);
+
+
+
+    for(long int i=0;i<noContigs;i++)
+    {
+        for(long int j=0;j<contigLengths[i];j++)
+        {
+            contigs[i][j]=toupper(contigs[i][j]);
+        }
+    }
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	/*	input contig file name, read file name
@@ -2682,7 +2786,7 @@ int main(int argc, char *argv[])
     
     
     
-    srand (SEED);
+    srand (SEED); // define in Cgal 94703
     //    srand (rand());
     
     
@@ -2690,113 +2794,24 @@ int main(int argc, char *argv[])
 	contigFileName=argv[1];
 	
     
-	contigFile=fopen(contigFileName, "r");
-	outFile=fopen("out.txt", "w");
-   
-    
-    
-	if (contigFile == NULL)
-	{
-		printf("Can't open contig file\n");
-		exit(1);
-	}
-	char *line= new char[MAX_REC_LEN];
-    
+
+	// outFile=fopen("out.txt", "w");
+
 	char *line1= new char[MAX_REC_LEN];
 	char *line2= new char[MAX_REC_LEN];
 	
-	int read;
-	int MAX_FILE_READ=MAX_REC_LEN/sizeof(line[0]);
+
+	// int MAX_FILE_READ=MAX_REC_LEN/sizeof(line[0]);
     
-    
-	long int bufferLength=1024;
-    
-	char *contig=new char[bufferLength];
-	contig[0]='\0';
-	char *newcontig;
-	char *contigName;
-	contigLength=0;
-    
-    
-	long int tempContigLength=0;
-	
-    
-	while(fgets(line, MAX_FILE_READ, contigFile)!=NULL)
-	{
-		if(line[0]==';')
-		{
-			continue;
-		}
-		else if(line[0]=='>')
-		{
-			contigName=new char[strlen(line)];
-			strcpy(contigName,line+1);
-			contigName[strlen(contigName)-1]='\0';
-			contigNames.push_back(strtok(contigName," \t\n"));
-			if(contigLength>0)
-			{
-				noContigs++;
-				contigs.push_back(contig);
-				contigLengths.push_back(contigLength);
-				totalContigLength+=contigLength;
-				contigLength=0;
-				bufferLength=1024;
-				contig=new char[bufferLength];
-				contig[0]='\0';
-			}
-		}
-		else
-		{
-			read=strlen(line);
-			tempContigLength=contigLength;
-			if(read<MAX_FILE_READ-1)
-			{
-				contigLength+=(read-1);
-			}
-			else
-			{
-				contigLength+=MAX_FILE_READ-1;
-				read++;
-                
-			}
-			if(contigLength>bufferLength)
-			{
-				bufferLength=max(bufferLength*2,contigLength+1);
-				newcontig=new char[bufferLength];
-				strcpy(newcontig,contig);
-				line[read-1]='\0';
-				strcat(newcontig, line);
-				delete []contig;
-				contig=newcontig;
-			}
-			else
-			{
-				line[read-1]='\0';
-				strcpy(contig+tempContigLength, line);
-			}
-            
-		}
-		
-	}
-	noContigs++;
-	contigs.push_back(contig);
-	contigLengths.push_back(contigLength);
-	totalContigLength+=contigLength;
-    
-    
-	fclose(contigFile);
-    
-    
-    
-	for(long int i=0;i<noContigs;i++)
-	{
-		for(long int j=0;j<contigLengths[i];j++)
-		{
-			contigs[i][j]=toupper(contigs[i][j]);
-		}
-	}
-    
-    
+
+	// read the contigs in a function named readContigs (contigFileName)
+	// will return a vector contgis and vector contigLengths.
+
+    int contigFileReadCode = readContigs(contigFileName, contigs, contigLengths);
+
+    if(contigFileReadCode == -1) {
+        exit(1);
+    }
     
     
     
@@ -2811,11 +2826,12 @@ int main(int argc, char *argv[])
     
 	/*
      use bfast or some other tool to map reads and save mapping
+     Here we have used bowtie-2
      */
 	
 	mapFileName="myout.sam";
     
-	mapFile=fopen("myout.sam", "r");
+	mapFile=fopen(mapFileName, "r");
     
 	summaryFile=fopen("stat.txt","r");
     
@@ -2848,7 +2864,7 @@ int main(int argc, char *argv[])
     
 	int noMatches=0;
     
-	while(fgets(line1, MAX_FILE_READ, mapFile)!=NULL)
+	while(fgets(line1, MAX_REC_LEN, mapFile)!=NULL)
 	{
 		
 		if(line1[0]=='@')
@@ -2917,7 +2933,7 @@ int main(int argc, char *argv[])
     
 	
     
-	fclose(outFile);
+	// fclose(outFile);
     
     
     cout<<insertCutoffMin<<" "<<insertCutoffMax<<endl;
