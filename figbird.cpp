@@ -1171,10 +1171,10 @@ double computeLikelihood(char const *mapFileName)
     
 	char *qname1,*qname2,preqname1[500],preqname2[500];
     
-	int MAX_FILE_READ=MAX_REC_LEN/sizeof(line1[0]);
+	int MAX_FILE_READ = MAX_REC_LEN / sizeof(line1[0]);
     
-	long double sum=0.0;
-	long double logsum=0.0;
+	long double sum = 0.0;
+	long double logsum = 0.0;
     
 	char * temp;
 	char *rname1, *rname2;
@@ -1188,11 +1188,11 @@ double computeLikelihood(char const *mapFileName)
 	
 	long double gapProb;
     
-    int tempInsertSize=0;
-    long double tempProb=0;
-    
-	preqname1[0]=preqname2[0]='*';
-	preqname1[1]=preqname2[1]=0;
+    int tempInsertSize = 0;
+    long double tempProb = 0;
+
+    strcpy(preqname1,"*");
+    strcpy(preqname2,"*");
     
     
 	int it=0;
