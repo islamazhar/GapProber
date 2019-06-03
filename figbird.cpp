@@ -1157,11 +1157,15 @@ long double computeErrorProb(char *cigar, char *md, char *read, int strandNo)
 	return errorProb;
 }
 
-
-double computeLikelihood(char const *file)
+/**
+ *
+ * @param file mapFileName (which is in this case myout.sam)
+ * @return logsum
+ */
+double computeLikelihood(char const *mapFileName)
 {
     
-	mapFile=fopen(file, "r");
+	mapFile = fopen(mapFileName, "r");
 	char *line1= new char[MAX_REC_LEN];
 	char *line2= new char[MAX_REC_LEN];
     
@@ -2899,7 +2903,7 @@ int main(int argc, char *argv[]) {
     
     
     
-    cout<<val1<<endl;
+    cout<<"computeLikelihood " << val1<<endl;
     
     
     //	cout<<"after val 2"<<endl;
