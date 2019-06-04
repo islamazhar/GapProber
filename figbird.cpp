@@ -953,25 +953,22 @@ long int getEffectiveLength(int insertSize)
 	}
 	return effectiveLengths[insertSize];
 }
-
+// Here
 long double computeErrorProb(char *cigar, char *md, char *read, int strandNo)
 {
     
-    unsigned long readLength=strlen(read);
+    unsigned long readLength = strlen(read);
 	
     
-	long double errorProb=noErrorProbs[readLength-1];
-    
-    
-    
-	if(md[5]=='^')
+	long double errorProb = noErrorProbs[readLength-1];
+	if(md[5]=='^') // ^ means mismatch MD:Z:100
 		return errorProb;
 	
 	
 	char tempMD[1000], tempCigar[1000];
     
-	unsigned long mdLength=strlen(md)-5;
-	unsigned long tempLength=0;
+	unsigned long mdLength = strlen(md)-5;
+	unsigned long tempLength = 0;
 	
 	char *temp;
 	int index=0,totalLength=0;
@@ -990,7 +987,7 @@ long double computeErrorProb(char *cigar, char *md, char *read, int strandNo)
     
 	strcpy(tempCigar,cigar);
     
-	temp=strtok(tempCigar,"IDM^\t\n ");
+	temp = strtok(tempCigar,"IDM^\t\n ");
     
 	while(temp!=NULL)
 	{
@@ -1158,7 +1155,7 @@ long double computeErrorProb(char *cigar, char *md, char *read, int strandNo)
 }
 
 /**
- *
+ * same code is present in CGAL no need to change anyhting.
  * @param file mapFileName (which is in this case myout.sam)
  * @return logsum
  */
@@ -1195,48 +1192,48 @@ double computeLikelihood(char const *mapFileName)
     strcpy(preqname2,"*");
     
     
-	int it=0;
+	int it = 0;
     
 	while(fgets(line1, MAX_FILE_READ, mapFile)!=NULL)
 	{
-		if(line1[0]=='@')
+		if(line1[0]=='@') // @ means comment line
 			continue;
-        //????
-		if(fgets(line2, MAX_FILE_READ, mapFile)==NULL)
+		if(fgets(line2, MAX_FILE_READ, mapFile) == NULL)
 			break;
         
-		qname1=strtok(line1,"\t");
+		// qname
+		qname1 = strtok(line1,"\t");
 		
-        temp=strtok(NULL,"\t");
-        flag=atoi(temp);
-		
+        // flag
+		temp = strtok(NULL,"\t");
+        flag = atoi(temp);
+        strandNo1 = (flag&16) >> 4;
+
+        // referenceName
+        rname1 = strtok(NULL,"\t");
+
+
+        // position
+		temp = strtok(NULL,"\t");
+		pos1 = atoi(temp);
         
-		strandNo1=(flag&16)>>4;
+		// cigar
+		cigar1 = strtok(NULL,"\t");
         
-        temp=strtok(NULL,"\t");
-		
-		temp=strtok(NULL,"\t");
-		pos1=atoi(temp);
-        
-		
-		cigar1=strtok(NULL,"\t");
-        
-		
-		temp=strtok(NULL,"\t");
-		
-		
-		
-		insertSize1=atoi(temp);
-        
-        
-		readString1=strtok(NULL,"\t");
+
+		// insertsize which follows a normal distributions of 100
+		temp = strtok(NULL,"\t");
+		insertSize1 = atoi(temp);
         
         
+		readString1 = strtok(NULL,"\t");
+        
+        // reading the additional tags
 		while((temp=strtok(NULL,"\t\n"))!=NULL)
 		{
 			if(temp[0]=='M' && temp[1]=='D')
 			{
-				strcpy(md1,temp);
+				strcpy(md1,temp); // MD:Z:10A5^AC6 means 10 matches, A mismatch which is on the reference sequence, 5 matches, AC mismatch, 6 matches.
 			}
 		}
         
@@ -1244,30 +1241,27 @@ double computeLikelihood(char const *mapFileName)
 		
         //second of the pair
         
-		qname2=strtok(line2,"\t");
-		temp=strtok(NULL,"\t");
-		flag=atoi(temp);
+		qname2 = strtok(line2,"\t");
+
+		temp = strtok(NULL,"\t");
+		flag = atoi(temp);
+		strandNo2 = (flag&16)>>4;
+        
+        rname2 = strtok(NULL,"\t");
 		
-        
-		strandNo2=(flag&16)>>4;
-        
-        temp=strtok(NULL,"\t");
-		
-		temp=strtok(NULL,"\t");
-		pos2=atoi(temp);
-        
-		
-        
-		cigar2=strtok(NULL,"\t");
+		temp = strtok(NULL,"\t");
+		pos2 = atoi(temp);
         
 		
-		temp=strtok(NULL,"\t");
+        
+		cigar2 = strtok(NULL,"\t");
+        
 		
+		temp = strtok(NULL,"\t");
 		insertSize2=atoi(temp);
         
-		readString2=strtok(NULL,"\t");
-        
-        
+		readString2 = strtok(NULL,"\t");
+
 		while((temp=strtok(NULL,"\t\n"))!=NULL)
 		{
 			if(temp[0]=='M' && temp[1]=='D')
@@ -1280,34 +1274,33 @@ double computeLikelihood(char const *mapFileName)
         
 		
 		
-		int insertSize=max(insertSize1, insertSize2);
-		
+		int insertSize = max(insertSize1, insertSize2); // insertSize1 is +ve then insertSize2 is -ve
+		insertSizeProb = 0;
         
-		insertSizeProb=0;
-        
-		if(insertSize>=0 && insertSize<maxInsertSize)
+		if(insertSize >=0 && insertSize < maxInsertSize)
 		{
-			insertSizeProb=insertLengthDist[insertSize];
+			insertSizeProb = insertLengthDist[insertSize]; //take the insertLengthDist
 		}
         
-		if(insertSizeProb==0)
+		if(insertSizeProb == 0) // can not understand ?
 		{
-			insertSizeProb=1/(double)uniqueMappedReads;
+			insertSizeProb = 1 / (double)uniqueMappedReads;
 		}
 		
         
-		errorProb1=computeErrorProb(cigar1,md1,readString1,strandNo1);
+		errorProb1 = computeErrorProb(cigar1,md1,readString1,strandNo1);
         
         
-		errorProb2=computeErrorProb(cigar2,md2,readString2,strandNo2);
+		errorProb2 = computeErrorProb(cigar2,md2,readString2,strandNo2);
         
         
         
         
-		long int totalEffectiveLength=getEffectiveLength(insertSize);
+		long int totalEffectiveLength = getEffectiveLength(insertSize);
         
         
 		long double prob=(1/(long double)(totalEffectiveLength))*insertSizeProb*errorProb1*errorProb2;
+		// can not understand the formuale?
         
         
         
