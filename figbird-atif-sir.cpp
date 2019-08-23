@@ -166,7 +166,7 @@ void initInsertCounts(int max)
 void updateInsertCounts(int index)
 {
     
-	if(index<=0)
+	if(index<=0) // what is meant by -ve insertCounts?
 		return;
 	if(index<maxInsertSize)
 	{
@@ -197,7 +197,7 @@ void updateInsertCounts(int index)
 		}
         
 		insertCounts[index]++;
-		maxInsertSize=tempInsertSize;
+		maxInsertSize = tempInsertSize;
 		delete []tempCounts;
 		
 	}
@@ -268,13 +268,22 @@ long int getContigNo(char *contigName)
 	return -1;
     
 }
-
+/**
+ * processErrorTypes is called while reading myout.sam
+ *
+ * @param cigar
+ * @param md
+ * @param read
+ * @param strandNo
+ *
+ * @returns one array named errotTypes not sure what does it do.
+ */
 
 
 void processErrorTypes(char *cigar, char *md, char *read, int strandNo)
 {
     
-	int readLength=getLength(read);
+	int readLength = getLength(read);
 	readLengths[readLength-1]++;
     
 	if(strcmp(md,noErrorCigar)!=0)
@@ -466,7 +475,6 @@ void processErrorTypes(char *cigar, char *md, char *read, int strandNo)
 		
 	}
 	delete []inserts;
-    
 }
 
 double dnorm(double x,double mean, double variance)
@@ -475,6 +483,10 @@ double dnorm(double x,double mean, double variance)
 	val*=exp(-((x-mean)*(x-mean))/(2*variance));
 	return val;
 }
+
+/**
+ *
+ */
 
 
 void computeProbabilites()
@@ -857,32 +869,32 @@ void processMapping(char *line)
 	int strandNo=0;
     
     
-	qname=strtok(line,"\t");
+	qname=strtok(line,"\t"); // query template names
 	
     
 	temp=strtok(NULL,"\t");
-	flag=atoi(temp);
+	flag=atoi(temp); //
 	
     
-	strandNo=(flag&16)>>4;
+	strandNo=(flag&16)>>4; // 4th bit represents if the string is reversed or not
     
-    rname=strtok(NULL,"\t");
+    rname=strtok(NULL,"\t"); // reference sequence name of the alignment. More specificall contig no
 	
     
 	temp=strtok(NULL,"\t");
-	pos=atoi(temp);
+	pos=atoi(temp); // 1-based leftmost mapping POSition of the first CIGAR operation that “consumes” a reference base.
+
+
+    cigar=strtok(NULL,"\t");
 	
 	
-	cigar=strtok(NULL,"\t");
+	temp = strtok(NULL,"\t"); // pnext or rnext we do not need it?
+    int insertSize = atoi(temp); // insertSize is -ve sometimes what is the meaning of it?
 	
-	
-	temp=strtok(NULL,"\t");
-	
-	readString=strtok(NULL,"\t");
-    
-	int insertSize=atoi(temp);
-    
-	while((temp=strtok(NULL,"\t\n"))!=NULL)
+	readString = strtok(NULL,"\t"); //Reference sequence name of the primary alignment of the NEXT read in the template.
+
+    // what does MD and H means?
+	while((temp = strtok(NULL,"\t\n"))!=NULL)
 	{
 		if(temp[0]=='M' && temp[1]=='D')
 		{
@@ -890,8 +902,8 @@ void processMapping(char *line)
 		}
 		else if(temp[0]=='I' && temp[1]=='H')
 		{
-			strcpy(nhstring,(temp+5));
-			nh=atoi(nhstring) ;
+			strcpy(nhstring,(temp+5)); // IH:i:1
+			nh=atoi(nhstring) ; // nh = 1 means one paired end is match other is not may be ?
 		}
         
 	}
@@ -906,14 +918,14 @@ void processMapping(char *line)
 		}
 		else
 		{
-			if(contigLengths[contigNo]>inputMean)
+			if(contigLengths[contigNo]>inputMean) // is inputMean even initialized?
 				updateInsertCounts(insertSize);
 		}
-		processErrorTypes(cigar,md,readString,strandNo);
+
+		processErrorTypes(cigar,md,readString,strandNo); // what is work of it?
+
 		uniqueMappedReads++;
 	}
-	
-    
 }
 
 long int getEffectiveLength(int insertSize)
@@ -1505,7 +1517,6 @@ int getMismatch(char *s, char * t, int sStart, int sEnd, int tStart, int tEnd, d
 		}
 	}
 	return mismatches;
-    
 }
 
 
@@ -1580,9 +1591,8 @@ class GapFiller
     char *concensus;
 	
     int maxGap;
+
 public:
-    
-    
     void allocate(int maxGap)
     {
         this->maxGap=maxGap;
@@ -1602,9 +1612,9 @@ public:
         
         for(long int i=0;i<maxSize;i++)
         {
-            countsGap[i]=new double[5];
-            probsGap[i]=new double[5];
-            errorProbsGap[i]=new double[5];
+            countsGap[i] = new double[5];
+            probsGap[i] = new double[5];
+            errorProbsGap[i] = new double[5];
         }
         
         
@@ -1654,14 +1664,10 @@ public:
 	            }
 	            errorProbsGap[i][j]=sum;
 	        }
-	        
-	        
 	    }
-	    
-	    
 	}
 	
-	void initGapFiller(int contigNo,long int gapStart, int originalGap, char * gapFileName)
+	void initGapFiller(int contigNo, long int gapStart, int originalGap, char * gapFileName)
 	{
 	    
 	    
@@ -1896,7 +1902,6 @@ public:
 
 	    while(fgets(line1, MAX_FILE_READ, scaffoldMap)!=NULL)
 		{
-			
 			if(line1[0]=='@')
 				continue;
 	        //????
@@ -2594,9 +2599,9 @@ public:
 	void fillGap()
 	{
 		
-		int gapMin=originalGap/2<10?0:originalGap/2;
-		int gapMax=originalGap*3/2;
-		int gapEstimate=gapMin;
+		int gapMin = originalGap/2 < 10 ? 0 : originalGap/2;
+		int gapMax = originalGap*3/2;
+		int gapEstimate = gapMin;
         int maxGapEstimate;
         int secondMaxGapEstimate;
         double maxLikelihood=-DBL_MAX;
@@ -2620,8 +2625,8 @@ public:
                 computeProbsGap();
                 computeErrorProbsGap();
             //    diff=gf.printSequence();
-    
             }
+
             if(likelihood>maxLikelihood)
             {
             	
@@ -2643,7 +2648,8 @@ public:
             }
            
            	gapEstimate++;
-           
+            cout << "maxLikelihood = " << maxLikelihood << "secondMaxLikelihood = " << secondMaxLikelihood << endl;
+            // per iteration probability eikhane check korte hobe?
         }
         cout<<maxGapEstimate<<"\t"<<maxLikelihood<<endl;
 
@@ -2676,9 +2682,19 @@ public:
     
     
 };
+/**
+ * @author: Atif sir.
+ *
+ * Read the contig file and pushes the contigs to a vector and their correesponding
+ * contigs length contigLengths vector.
+ * Note: Both contigs and contigLengths are global vectors.
+ *
+ * @params: contigFileName the contig file name to be read
+ * @returns: contigs the vectors to which the contigs are push
+ * @returns: contigLengths the vectors to which the contigs length are push.
+ */
 
-
-int readContigs( char* contigFileName, vector<char*> &contigs, vector<long int> &contigLengths;) {
+int readContigs( char* contigFileName, vector<char*> &contigs, vector<long int> &contigLengths) {
 
     long int bufferLength=1024;
     int read;
@@ -2774,33 +2790,26 @@ int readContigs( char* contigFileName, vector<char*> &contigs, vector<long int> 
             contigs[i][j]=toupper(contigs[i][j]);
         }
     }
+
     return 0;
 }
 
 int main(int argc, char *argv[])
 {
-	/*	input contig file name, read file name
-     contig file - fasta format
-     read file - fastq format
+	/*
+	 * input contig file name, read file name
+	 * contig file - fasta format
+	 * read file - fastq format
      */
     
     
     
-    srand (SEED); // define in Cgal 94703
-    //    srand (rand());
-    
-    
-    
-	contigFileName=argv[1];
-	
-    
+    srand (SEED); // defined in Cgal 94703
+ //   srand (rand());
+
+	contigFileName = argv[1];
 
 	// outFile=fopen("out.txt", "w");
-
-	char *line1= new char[MAX_REC_LEN];
-	char *line2= new char[MAX_REC_LEN];
-	
-
 	// int MAX_FILE_READ=MAX_REC_LEN/sizeof(line[0]);
     
 
@@ -2815,82 +2824,89 @@ int main(int argc, char *argv[])
     
     
     
-	long int contigNo;
-	double readCount;
+	// long int contigNo;
+	// double readCount;
 	char *temp;
-    
-	
+    char *line = new char[MAX_REC_LEN];
+    int count=0;
     
     
     //	cout<<"after reading contig file"<<endl;
     
 	/*
-     use bfast or some other tool to map reads and save mapping
-     Here we have used bowtie-2
+	 * use bfast or some other tool to map reads and save mapping
+	 * for now we can use bowtie-2
      */
-	
-	mapFileName="myout.sam";
+
+    // reading the summary file
+
+    summaryFile = fopen("stat.txt","r");
+    fscanf(summaryFile,"%ld %ld %d %d %d",&totalCount, &unCount, &toAlign, &maxReadLength, &MAX_INSERT_SIZE);
+
+    MAX_INSERT_SIZE = (MAX_INSERT_SIZE > 20000) ? MAX_INSERT_SIZE : 20000;
+
+    insertCutoffMin = MAX_INSERT_SIZE;
+
+    initInsertCounts(MAX_INSERT_SIZE); // creating an array of insertCounts[MAX_INSERT_SIZE] = 1
+    initErrorTypes(maxReadLength); // what is the work of it??
+
+
+    myitoa(maxReadLength, noErrorCigar, 10); // why we are assigning maxReadLength to noErroCipger string?
+    strcpy(noErrorMD,"MD:Z:");
+    strcat(noErrorMD,noErrorCigar);
+    strcat(noErrorCigar,"M");
+
+    // noErrorCigar = "maxReadLengthM
+    // noErrorMD = "MD:Z:maxReadLength"
+
+    // cout<<"after allocation"<<endl;
+
+    int noMatches=0;
+    // char *line2= new char[MAX_REC_LEN];
+    fclose(summaryFile);
+
+    // reading the summary file end
+	// reading the Map file
+	// and call processMapping
+
+	mapFileName = "myout.sam";
+	mapFile = fopen(mapFileName, "r");
+    if (mapFile == NULL)
+    {
+        printf("Can't open map file\n");
+        exit(1);
+    }
+
+    while(fgets(line, MAX_REC_LEN, mapFile)!=NULL)
+    {
+
+        if(line[0]=='@')
+            continue;
+
+        processMapping(line); // what is the work of it??
+
+        count+=1;
+
+    }
+    fclose(mapFile);
+    // reading the Map file end
+
+
+
+
     
-	mapFile=fopen(mapFileName, "r");
     
-	summaryFile=fopen("stat.txt","r");
-    
-	if (mapFile == NULL)
-	{
-		printf("Can't open map file\n");
-		exit(1);
-	}
-    
-	int count=0;
-	
-	fscanf(summaryFile,"%ld %ld %d %d %d",&totalCount, &unCount, &toAlign, &maxReadLength, &MAX_INSERT_SIZE);
-    
-    MAX_INSERT_SIZE=MAX_INSERT_SIZE>20000?MAX_INSERT_SIZE:20000;
-    
-	insertCutoffMin=MAX_INSERT_SIZE;
-    
-	initInsertCounts(MAX_INSERT_SIZE);
-    
-    
-	initErrorTypes(maxReadLength);
-    
-    
-	myitoa(maxReadLength, noErrorCigar, 10);
-	strcpy(noErrorMD,"MD:Z:");
-	strcat(noErrorMD,noErrorCigar);
-	strcat(noErrorCigar,"M");
-    
-    //    	cout<<"after allocation"<<endl;
-    
-	int noMatches=0;
-    
-	while(fgets(line1, MAX_REC_LEN, mapFile)!=NULL)
-	{
-		
-		if(line1[0]=='@')
-			continue;
-        
-		processMapping(line1);
-        
-		count+=1;
-        
-	}
-    
-	fclose(mapFile);
-	fclose(summaryFile);
-    
-    
-	computeProbabilites();
+	computeProbabilites(); // what is the work of it??
     
     
     
-	double val1=computeLikelihood(mapFileName);
+	double val1 = computeLikelihood(mapFileName);
     
     
     
     //    	cout<<"after val 1"<<endl;
     
-    FILE * mappedInsertFile=fopen("mappedInserts.txt","w");
+    FILE * mappedInsertFile = fopen("mappedInserts.txt","w");
     
     
     long int totalInserts=0;
@@ -3017,7 +3033,7 @@ int main(int argc, char *argv[])
     
 	int gapNo=0;
 
-    while(fgets(line1, MAX_FILE_READ, gapInfoFile)!=NULL)
+    while(fgets(line, MAX_REC_LEN, gapInfoFile)!=NULL)
     {
     	
     	strcpy(gapFileName,"gaps_");
@@ -3034,7 +3050,7 @@ int main(int argc, char *argv[])
 
 		gapNo++;
         
-        temp=strtok(line1,"\t");
+        temp=strtok(line,"\t");
         gapContigNo=atoi(temp);
 
         temp=strtok(NULL,"\t");
@@ -3109,7 +3125,7 @@ int main(int argc, char *argv[])
     for(int i=0;i<noContigs;i++)
     {
     	
-    	contig=new char[contigLengths[i]+1];
+    	char * contig = new char[contigLengths[i]+1];
     	offset=0;
     	index=0;
     	
@@ -3169,6 +3185,7 @@ int main(int argc, char *argv[])
         }
         contig[index]='\0';
     	fprintf(filledContigFile,"%s\n",contig);
+    	delete[] contig;
         
     }
    
