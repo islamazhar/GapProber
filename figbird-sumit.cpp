@@ -13,6 +13,7 @@
 #include <vector>
 #include <cmath>
 #include <cfloat>
+#include<cstdlib>
 using namespace std;
 
 #define _USE_MATH_DEFINES
@@ -63,7 +64,7 @@ int tolerance;
 int insertCountMax;
 
 int priorSize=0;
-
+int f;
 long int *insertCountsMapped;
 long int *insertCountsUnmapped;
 
@@ -131,7 +132,6 @@ int gapProbCutOff;
 FILE *gapFile;
 FILE *gapInfoFile;
 FILE *gapOutFile;
-FILE *gapOutFile2;
 //=======================================================================
 
 struct MAP
@@ -1522,20 +1522,20 @@ class GapFiller
     double **countsGap;
     double **probsGap;
     double **errorProbsGap;
-    double **temp_probs_gap;
+
 	char *bestString;
 	char *secondBestString;
 
     int contigNo;
     long int gapStart;
     int gapLength;
-    int gapLength2;
+
     int originalGap;
 
     long int startPos, endPos;
 	char gapFileName[500];
     char *concensus;
-    char *concensus2;
+
 
 
     int maxGap;
@@ -1549,12 +1549,12 @@ public:
         
         int maxSize=maxGap+2*maxDistance;
         concensus=new char[maxGap+1];
-        concensus2=new char[maxGap+1];
+
 
         countsGap=new double *[maxSize];
         probsGap=new double *[maxSize];
         errorProbsGap=new double *[maxSize];
-        temp_probs_gap = new double*[maxSize];
+
 
         bestString=new char[maxGap+1];
         secondBestString=new char[maxGap+1];
@@ -1564,7 +1564,7 @@ public:
             countsGap[i]=new double[5];
             probsGap[i]=new double[5];
             errorProbsGap[i]=new double[5];
-            temp_probs_gap[i]=new double[5];
+
         }
     }
 
@@ -1580,10 +1580,10 @@ public:
 	            total=total+countsGap[i][j];
 	        }
 	        Ncount=countsGap[i][4];
-	        
+
 	        for(int j=0;j<4;j++)
 	        {
-	            probsGap[i][j]=(countsGap[i][j]+Ncount/4)/total;
+	            probsGap[i][j]=((countsGap[i][j]+Ncount/4)/total);
 	        }
 	        probsGap[i][4]=0;
 	    }
@@ -1603,7 +1603,7 @@ public:
 	                if(j==k)
 	                    continue;
 	                
-	                sum+=probsGap[i][k]*errorTypeProbs[k][j];
+	                sum+=probsGap[i][k]*(errorTypeProbs[k][j]);
 	            }
 	            errorProbsGap[i][j]=sum;
 	        }
@@ -1623,9 +1623,10 @@ public:
 	void initialize(int gapLength)//called using gapestimate
 	{
 		this->gapLength=gapLength;
-	    startPos=this->gapStart-maxDistance;
+	    startPos=(this->gapStart-maxDistance)<0?0:(this->gapStart-maxDistance);
 	    endPos=this->gapStart+this->gapLength+maxDistance;
 
+	    //cout<<"endpos = "<<endPos<<"start = "<<startPos<<endl;
 	    for(long int i=0;i<endPos-startPos;i++)
 	    {
 	        for(int j=0;j<5;j++)
@@ -1670,13 +1671,15 @@ public:
 	        ch=contigs[contigNo][i+startPos-gapLength+originalGap];
 	        countsGap[i][charCodes[ch]]++;
 	    }
+
 	    computeProbsGap();
 	    computeErrorProbsGap();
+
 	}
 
-	void placeReads(int ge,double *p1, double *p2)
+	double placeReads(int ge)
 	{
-	    //cout<<"In Placeread with iteration = >>>>>>>>>>>>>>>>>>."<<ge<<"\n\n";
+	    //int f=0;//old=0;new =1
 	    FILE * scaffoldMap=fopen(gapFileName, "r");
 	    
 		char *qname1,*qname2;
@@ -1697,7 +1700,7 @@ public:
 		
 	    char tempReadString[100];
 	    
-	    double maxProb=0,tempProb,maxLikelihood1=0,maxLikelihood2=0;
+	    double maxProb=0,tempProb,maxLikelihood=0;
 	    
 	    int insertSize,mleInsertSize,tempInsertSize;
 	    
@@ -1810,14 +1813,14 @@ public:
 	        {
 	        	isReverse=0;
 			}
-	 
-	        maxProb=0;
+
+	        if(f==1)maxProb=-DBL_MAX;
+	        else maxProb=0;
+
 	        maxMatch=0;
 	        maxPos=0;
-	       double aa=0;
+	        double aa=0;
 
-	       //insertThresholdMin=200;
-	       //insertThresholdMax=450;
 	       //cout<<"Pos1 = "<<pos1<<"\tPos2 = "<<pos2<<endl;//same
 	        if(pos1<gapStart)
 	        {
@@ -1828,12 +1831,13 @@ public:
 	                tempInsertSize=insertSize+i-gapStart;
 	                if(tempInsertSize<(insertThresholdMin) || tempInsertSize > (insertThresholdMax))
                     {
-                        //cout<<"I am in continue???\n";
+
                         continue;
                     }
 
-	                tempProb=insertLengthDistSmoothed[tempInsertSize];//
-	                //if(read_no == count_of_gap && (ge == 3))cout<<"Initial val of tempprob = "<<tempProb<<endl<<endl;
+                    if(f==1)tempProb=log(insertLengthDistSmoothed[tempInsertSize]);
+	                else tempProb=(insertLengthDistSmoothed[tempInsertSize]);
+
 	                tempMatch=0;
 
 	                for(int j=0;j<readLength2;j++)
@@ -1849,22 +1853,17 @@ public:
 						{
 							readIndex=j;
 						}
-
 	                    if(charCode<4)
 	                    {
 	                        aa =(probsGap[index][charCode]*(1-errorPosDist[readIndex])+errorPosDist[readIndex]*errorProbsGap[index][charCode]);
-	                        tempProb*= aa;
+	                        if(f==1)tempProb += log(aa);
+	                        else tempProb*= aa;
 	                    }
 	                    else
 	                    {
-	                        tempProb*=errorPosDist[readIndex]*errorProbsGap[index][4];
-	                        //cout<<"In else\n";//If NNN in read?Doesn't enter here because reads have no NNNNNN
+	                        if(f==1)tempProb +=log(errorPosDist[readIndex]*errorProbsGap[index][4]);
+	                        else tempProb *=(errorPosDist[readIndex]*errorProbsGap[index][4]);
 	                    }
-	                   /* if(count_of_gap == read_no && (ge == 2))
-                        {
-                            //cout<<"Index = "<<index<<"probsgap = "<<probsGap[index][charCode]<<" , errorposdist = "<<errorPosDist[readIndex]<<" , errorprobsgap = "<<errorProbsGap[index][charCode]<<" , Tempprob = "<<tempProb<<endl;
-                            if(probsGap[index][charCode] ==0 && errorProbsGap[index][charCode] ==0)cout<<"Danger!!!!"<<endl;
-                        }*/
 	                }
 
 	                if(tempProb>maxProb)
@@ -1873,45 +1872,34 @@ public:
 	                    maxProb=tempProb;
 	                    mleInsertSize=insertSize+i-gapStart;
 	                    maxPos=i-startPos;
-	                    //cout<<"In if, so its updating, maxprob = "<<maxProb<<endl;
 	                }
-
-	                /*if(count_of_gap == read_no && (ge == 2))
-                    {
-                        //cout<<"Done^^^^^^^^^^^^^^^^^^^^^^^^\n\n";
-                       // cout<<"Final Temppprob = "<<tempProb<<", for gapindex in for loop = "<<i<<endl;
-                        //cout<<"Final maxprob = "<<maxProb<<endl;
-                    }*/
 
 	                for(int j=0;j<readLength2;j++)
 	                {
 	                    if(i-startPos+j>=maxDistance && i-startPos+j<maxDistance+gapLength)
 	                    {
-	                        countsGap[i-startPos+j][charCodes[readString2[j]]]+=tempProb;
-
+                            if(f==1)countsGap[i-startPos+j][charCodes[readString2[j]]]+=pow(10,tempProb);//antilog
+                            else countsGap[i-startPos+j][charCodes[readString2[j]]]+= tempProb;
 	                    }
-	                    
 	                }
-
 	            }//for end
 	        }
 	        else
 	        {
-	    
+
 	            insertSize=pos1-(gapStart+gapLength)+readLength1;
 	            //cout<<"In else placereads, insertsize = "<<insertSize<<endl;
 	            for(long int i=gapStart-readLength2+1;i<gapStart+gapLength;i++)
 	            {
-
 	                tempInsertSize=insertSize+gapStart+gapLength-i;
 	                if(tempInsertSize<insertThresholdMin || tempInsertSize > insertThresholdMax)
 	                    {
-	                        //cout<<"I am in continue???\n";
+
 	                        continue;
 	                    }
 	                
-	                tempProb=insertLengthDistSmoothed[tempInsertSize];
-	                //if(count_of_gap == read_no && (ge == 2))cout<<"Initial val of tempprob = "<<tempProb<<endl<<endl;
+	                if(f==1)tempProb=log(insertLengthDistSmoothed[tempInsertSize]);
+	                else tempProb=(insertLengthDistSmoothed[tempInsertSize]);
 
 	                tempMatch=0;
 
@@ -1931,23 +1919,17 @@ public:
 							readIndex=j;
 						}
 
-	                    
 	                    if(charCode<4)
 	                    {
 	                        aa=(probsGap[index][charCode]*(1-errorPosDist[readIndex])+errorPosDist[readIndex]*errorProbsGap[index][charCode]);
-	                        tempProb*= aa;
+	                        if(f==1)tempProb += log(aa);
+	                        else tempProb*= aa;
 	                    }
 	                    else
 	                    {
-	                        tempProb*=errorPosDist[readIndex]*errorProbsGap[index][4];
-	                        //cout<<"In else\n";//If NNN in read?Doesn't enter here
+	                        if(f==1)tempProb +=log(errorPosDist[readIndex]*errorProbsGap[index][4]);
+                            else tempProb *=(errorPosDist[readIndex]*errorProbsGap[index][4]);
 	                    }
-	                    
-	                    /*if(count_of_gap == read_no && (ge == 2))
-                        {
-                            //cout<<"Index = "<<index<<" probsgap = "<<probsGap[index][charCode]<<" , errorposdist = "<<errorPosDist[readIndex]<<" , errorprobsgap = "<<errorProbsGap[index][charCode]<<" , Tempprob = "<<tempProb<<endl;
-                            //if(probsGap[index][charCode] ==0 && errorProbsGap[index][charCode] ==0)cout<<"Danger!!!!"<<endl;
-                        }*/
 	                }
 
 	                if(tempProb>maxProb)
@@ -1956,85 +1938,87 @@ public:
 	                    maxProb=tempProb;
 	                    mleInsertSize=insertSize+gapStart+gapLength-i;
 	                    maxPos=i-startPos;
-	                    //cout<<"In if, so its updating, maxprob = "<<maxProb<<endl;
 	                }
-
-	                /*if(count_of_gap == read_no && (ge == 2))
-                    {
-                        //cout<<"Done^^^^^^^^^^^^^^^^^^^^^^^^\n\n";
-                        //cout<<"Final Temppprob = "<<tempProb<<", for gapindex in for loop = "<<i<<endl;
-                        //cout<<"Final maxprob = "<<maxProb<<endl;
-                    }*/
 
 	                for(int j=0;j<readLength2;j++)
 	                {
 	                    if(i-startPos+j>=maxDistance && i-startPos+j<maxDistance+gapLength)
 	                    {
-	                        countsGap[i-startPos+j][charCodes[readString2[j]]]+=tempProb;
-	                  
+	                        if(f==1)countsGap[i-startPos+j][charCodes[readString2[j]]]+=pow(10,tempProb);
+	                        else countsGap[i-startPos+j][charCodes[readString2[j]]]+= tempProb;
 	                    }
-	                    
 	                }
-
 	            }//for end
 	        }
-
-	        //cout<<"Read - "<<count_of_gap<<" : Tempprob of each read in gap = "<<" "<<log(maxProb)<<endl;
-
-	        maxLikelihood1 += (maxProb);
-	        //maxLikelihood1 += (maxProb);
-	        maxLikelihood2 += log(maxProb);
+	        //maxLikelihood += log(maxProb);
+            if(f==1)maxLikelihood += (maxProb);
+            else
+            {
+                if(maxProb>0)maxLikelihood += log(maxProb);
+            }
 	        count_of_gap++;
-
-	        //cout<<"Current(sum)-> "<< maxLikelihood<<endl;
 	    }//while end
 	    
 	    delete [] line1;
 	    delete [] line2;
 	    
 	    fclose(scaffoldMap);
-	    //cout<<"Maxlikelihood after iteration-> "<<ge<<" is = "<<maxLikelihood<<endl;
-	    *p1 = (maxLikelihood1);
-	    *p2 = maxLikelihood2;
+	    //cout<<"Iteration "<<ge<<" , maxlikelihood = "<<maxLikelihood<<endl;
+	    return maxLikelihood;
 	}
-	
-	void computeSequence(int f)//based on the 2Darray countsGap
+
+	int checkDuplicate(double *arr)
+	{
+	    int flag=0;
+	    int size = sizeof(arr) /  sizeof(arr[0]);
+	    int count[10000]={0};
+        for(int i = 0; i < size; i++)
+         {
+             if(count[(int)arr[i]] == 1)
+             {
+                flag=1;
+                break;
+             }
+             else count[(int)arr[i]]++;
+         }
+        return flag;
+	}
+
+	void computeSequence(int check)//based on the 2Darray countsGap
 	{
 	    double max=0;
 	    int maxIndex=0;
 
-        //cout<<endPos<<" , "<<startPos<<endl;
-
-	    for(long int i=maxDistance;i<endPos-startPos-maxDistance;i++)
+        for(long int i=maxDistance;i<endPos-startPos-maxDistance;i++)
 	    {
 	        max=0;
 	        maxIndex=0;
 	        float aaa = 1;
-	        for(int j=0;j<5;j++)
+	        int flag=-1;
+	        for(int j=0;j<=4;j++)
 	        {
-	            if(f ==0){
-                    if(countsGap[i][j]>max)
-                    {
-                        max=countsGap[i][j];
-                        maxIndex=j;
-                    }
+	            if(countsGap[i][j]>max)
+                {
+                    max=countsGap[i][j];
+                    maxIndex=j;
+                    if(max == 0)flag=1;//all elements in the array is 0
+                    else flag=0;
                 }
-	            else
-	            {
-                    if(temp_probs_gap[i-maxDistance][j] == aaa)
-                    {
-                        maxIndex=j;
-                        break;
-                    }
-                }
-	        }
+             }
 
-	        if(f == 0)
-	        {
-	            if(maxIndex==0)
+	        ///Check =0 when, computesequence is called from  func to compute best string, we don't
+	                            //want to put N for that call
+	        ///Check =1 when, computesequence is called from finalize() func to compute final string, we
+            	                            //want to put N for that call
+
+	        int flag2=0;
+
+	        if(check == 1)flag2 = checkDuplicate(countsGap[i]);//0 means no duplicate
+	        if((flag == 0 && flag2 == 0) || !check)
+            {
+                if(maxIndex==0)
                 {
                     concensus[i-maxDistance]='A';
-
                 }
                 else if(maxIndex==1)
                 {
@@ -2055,51 +2039,26 @@ public:
                 {
                     concensus[i-maxDistance]='N';
                 }
-	        }
-	        else
-	        {
-	            if(maxIndex==0)
-                {
-                    concensus2[i-maxDistance]='A';
-
-                }
-                else if(maxIndex==1)
-                {
-                    concensus2[i-maxDistance]='C';
-
-                }
-                else if(maxIndex==2)
-                {
-                    concensus2[i-maxDistance]='G';
-
-                }
-                else if(maxIndex==3)
-                {
-                    concensus2[i-maxDistance]='T';
-
-                }
-                else
-                {
-                    concensus2[i-maxDistance]='N';
-                }
-	        }
+            }
+            else
+            {
+                //cout<<"Countsgap row index = "<<i<<" , flag = "<<flag<<" , flag2 = "<<flag2<<endl;
+                concensus[i-maxDistance]='N';
+            }
 	    }
-	    
-	    if(f==0)concensus[endPos-startPos-2*maxDistance]='\0';
-	    else concensus2[endPos-startPos-2*maxDistance]='\0';
+	    concensus[endPos-startPos-2*maxDistance]='\0';
 	}
 
 
-	int getConcensus(char *s,int f)
+	int getConcensus(char *s)
 	{
 	    int len;
-	    if(f == 0)len = this-> gapLength;
-	    else len = this-> gapLength2;
+	    len = this-> gapLength;
+
 
 		for(int i=0;i<len;i++)
 		{
-			if(f == 0)s[i]=concensus[i];
-			else s[i]=concensus2[i];
+			s[i]=concensus[i];
 		}
 
 		s[len]='\0';
@@ -2179,7 +2138,8 @@ public:
 
         }
         gapString[maxSize]='\0';
-
+        //cout<<"GapString = \n"<< gapString<<endl;
+        //cout<<"end pos = "<<endPos<<" , startpos = "<<startPos<<endl;
         for(long int i=maxDistance;i<endPos-startPos-maxDistance;i++)
         {
             for(int j=0;j<5;j++)
@@ -2188,6 +2148,7 @@ public:
             }
         }
 
+
         startPos=this->gapStart-maxDistance;
         endPos=this->gapStart+this->gapLength+maxDistance;
 
@@ -2195,6 +2156,7 @@ public:
 
         while(fgets(line1, MAX_FILE_READ, scaffoldMap)!=NULL)
         {
+            //cout<<"At the start of while"<<endl;
             if(line1[0]=='@')
                 continue;
             //????
@@ -2281,14 +2243,12 @@ public:
             {
 
                 insertSize=gapStart-pos1+readLength2;
-
                 for(long int i=gapStart-readLength2+1;i<gapStart+gapLength;i++)
                 {
 
                     tempInsertSize=insertSize+i-gapStart;
                     if(tempInsertSize<insertThresholdMin || tempInsertSize > insertThresholdMax)
                         continue;
-
 
 
                     tempProb=insertLengthDistSmoothed[tempInsertSize];
@@ -2316,7 +2276,7 @@ public:
                         }
                         else
                         {
-                            tempProb*=errorPosDist[k]*errorTypeProbs[fromCharCode][toCharCode];
+                            if(fromCharCode >=0 && fromCharCode<=4)tempProb*=errorPosDist[k]*errorTypeProbs[fromCharCode][toCharCode];
                         }
 
                     }
@@ -2332,7 +2292,7 @@ public:
 
 
                 }
-               // cout<<"gap_cutoff = "<<-log(maxProb)<<endl;
+               //cout<<"gap_cutoff = "<<-log(maxProb)<<endl;
                 if(-log(maxProb)<=gapProbCutOff)
                 {
                     for(int j=0;j<readLength2;j++)
@@ -2340,13 +2300,11 @@ public:
                         if(maxPos+j>=maxDistance && maxPos+j<maxDistance+gapLength)
                         {
                             countsGap[maxPos+j][charCodes[readString2[j]]]+=1;
-
                         }
                     }
                 }
                 else
                 {
-
                     discardedCount++;
                 }
      //           cout<<(pos1-startPos)<<"\t"<<mleInsertSize<<"\t"<<maxProb<<"\t"<<maxMatch<<"\t"<<readString2<<endl;
@@ -2354,17 +2312,15 @@ public:
             }
             else
             {
-
                 insertSize=pos1-(gapStart+gapLength)+readLength1;
 
                 for(long int i=gapStart-readLength2+1;i<gapStart+gapLength;i++)
                 {
-
                     tempInsertSize=insertSize+gapStart+gapLength-i;
                     if(tempInsertSize<insertThresholdMin || tempInsertSize > insertThresholdMax)
                         continue;
 
-
+                    //cout<<"After continue"<<endl;
                     tempProb=insertLengthDistSmoothed[tempInsertSize];
                     tempMatch=0;
 
@@ -2384,31 +2340,28 @@ public:
                             k=readLength2-j-1;
                         }
 
+                        //cout<<"Value of index = "<<index<<" , From = "<<fromCharCode<<", to = "<<toCharCode<<endl;
                         if(fromCharCode==toCharCode)
                         {
                             tempProb*=(1-errorPosDist[k]-inPosDist[k]-delPosDist[k]);
+                            //cout<<"tempProb = "<<tempProb<<endl;
                         }
                         else
                         {
-                            tempProb*=errorPosDist[k]*errorTypeProbs[fromCharCode][toCharCode];
+                            if(fromCharCode >=0 && fromCharCode<=4)tempProb*=errorPosDist[k]*errorTypeProbs[fromCharCode][toCharCode];
+                            //cout<<"tempProb = "<<tempProb<<endl;
                         }
-
-
                     }
                     if(tempProb>maxProb)
-                        //     if(tempMatch>maxMatch)
                     {
                         maxMatch=tempMatch;
                         maxProb=tempProb;
                         mleInsertSize=insertSize+gapStart+gapLength-i;
                         maxPos=i-startPos;
-
                     }
-
-
                 }
        //         cout<<(endPos-pos1+readLength1)<<"\t"<<mleInsertSize<<"\t"<<maxProb<<"\t"<<maxMatch<<"\t"<<readString2<<endl;
-
+                //cout<<"Out offor loop"<<endl;
                 //cout<<"else gap_cutoff = "<<-log(maxProb)<<endl;
                 if(-log(maxProb)<=gapProbCutOff)
                 {
@@ -2417,9 +2370,7 @@ public:
                         if(maxPos+j>=maxDistance && maxPos+j<maxDistance+gapLength)
                         {
                             countsGap[maxPos+j][charCodes[readString2[j]]]+=1;
-
                         }
-
                     }
                 }
                 else
@@ -2427,17 +2378,16 @@ public:
 
                     discardedCount++;
                 }
-
-
             }
+            //cout<<"At the end of while"<<endl;
         }
 
-        cout<<"Total_count = "<<totalCount<<"\t"<<"Discarded = "<<discardedCount<<endl;
+        cout<<"Total_Reads = "<<totalCount<<"\t"<<"Discard = "<<discardedCount<<endl;
 
         delete [] line1;
         delete [] line2;
 
-        computeSequence(0);
+        computeSequence(1);
 
         delete [] gapString;
 
@@ -2447,7 +2397,7 @@ public:
 
 	void printArr(int a,int b)
 	{
-	    printf("Printing probsgap array\n\n");
+	    /*printf("Printing probsgap array\n\n");
 	    for(int i=a;i<b;i++)
 	    {
 	        cout<<"i = "<<i<<"==>";
@@ -2457,15 +2407,8 @@ public:
 
 
 	    }
-	    printf("Printing Temp probsgap array\n\n");
-        for(int i=a;i<b;i++)
-        {
-            cout<<"i = "<<i<<"==>";
-            for(int j=0;j<4;j++)
-                cout<<temp_probs_gap[i][j]<<" ";
-            cout<<endl;
-        }
 
+*/
         printf("Printing countsgap array\n\n");
         for(int i=a;i<b;i++)
         {
@@ -2493,33 +2436,37 @@ public:
         */
 	}
 
-
 	void fillGap()
 	{
-	    float gp_frac = .95;
-		int gapMin=originalGap*gp_frac<10?0:originalGap*gp_frac;
-		int gapMax=originalGap*1.05;
+	    float gp_frac,gp_frac2;
+	    if(originalGap>300) gp_frac = .95;
+	    else
+	    {
+	        if(originalGap<100)gp_frac=0.1;
+	        else gp_frac = 0.85;
+	     }
+
+	    if(originalGap>200) gp_frac2 = 1.05;
+        else
+        {
+            gp_frac2 = 1.5;
+        }
+
+		int gapMin=originalGap*gp_frac<10?1:originalGap*gp_frac;
+		int gapMax=originalGap*gp_frac2;
 		int gapEstimate=gapMin;
-        int maxGapEstimate1 = gapMin;
-        int secondMaxGapEstimate1 = gapMin;
-        int maxGapEstimate2 = gapMin;
-        int secondMaxGapEstimate2 = gapMin;
+        int maxGapEstimate = gapMin;
+        int secondMaxGapEstimate = gapMin;
 
-        double maxLikelihood1=-DBL_MAX;
-        double secondMaxLikelihood1=-DBL_MAX;
+        double maxLikelihood=-DBL_MAX;
+        double secondMaxLikelihood=-DBL_MAX;
 
-        double maxLikelihood2=-DBL_MAX;
-        double secondMaxLikelihood2=-DBL_MAX;
-    	double likelihood1=0,likelihood2=0;
-        double temp_likelihood=0;
+        double likelihood=0;
 
         bestString[0]='\0';
 		secondBestString[0]='\0';
 
         int num_itr = 5;
-
-        int updated=0;
-        int temp_count=0;
 
         for(int j=0;j<(gapMax-gapMin+1);j++)
         {
@@ -2527,103 +2474,64 @@ public:
 
             for(int i=0;i<num_itr;i++)
             {
-                //printArr(0,800);
-                placeReads(i,&likelihood1,&likelihood2);
+                likelihood = placeReads(i);
+
                 computeProbsGap();
                 computeErrorProbsGap();
             }
-
-            if(likelihood1>maxLikelihood1)
+            if(likelihood>=maxLikelihood)
             {
-                updated = 1;
-
-            	secondMaxLikelihood1=maxLikelihood1;
-            	secondMaxGapEstimate1=maxGapEstimate1;
-
-            	maxLikelihood1=likelihood1;
-            	maxGapEstimate1=gapEstimate;
-
-            	//Newly added
-            	for(int i=0;i<gapEstimate;i++)
-                {
-                    for(int j=0;j<5;j++)
-                        temp_probs_gap[i][j] = probsGap[i+maxDistance][j];
-                }
-            }
-            else if(likelihood1>secondMaxLikelihood1)
-            {
-            	secondMaxLikelihood1=likelihood1;
-            	secondMaxGapEstimate1=gapEstimate;
-            }
-
-            if(likelihood2>maxLikelihood2)
-            {
-                secondMaxLikelihood2=maxLikelihood2;
-                secondMaxGapEstimate2=maxGapEstimate2;
+                secondMaxLikelihood=maxLikelihood;
+                secondMaxGapEstimate=maxGapEstimate;
                 strcpy(secondBestString,bestString);
+                maxLikelihood=likelihood;
+                maxGapEstimate=gapEstimate;
 
-                maxLikelihood2=likelihood2;
-                maxGapEstimate2=gapEstimate;
+
                 computeSequence(0);
                 strcpy(bestString,concensus);
             }
-            else if(likelihood2>secondMaxLikelihood2)
+            else if(likelihood>=secondMaxLikelihood)
             {
-                secondMaxLikelihood2=likelihood2;
-                secondMaxGapEstimate2=gapEstimate;
+                secondMaxLikelihood=likelihood;
+                secondMaxGapEstimate=gapEstimate;
                 computeSequence(0);
                 strcpy(secondBestString,concensus);
             }
-            cout<<"GapEstimate = "<<gapEstimate<<"\t"<<"Likelihood1 = "<<likelihood1<<" , Likelihood2 = "<<likelihood2<<endl;
 
-            /*if((maxLikelihood - likelihood) >= 30000 && maxLikelihood != -DBL_MAX) break;
-            double diff = (temp_likelihood - likelihood) >0?temp_likelihood - likelihood: -1*(temp_likelihood - likelihood);
-            if(diff == 0)temp_count++;
-            if(temp_count>15){cout<<"Limit reached\n";break;}
-            else temp_likelihood = likelihood;*/
-
+            //cout<<"GapEstimate = "<<gapEstimate<<"\t"<<"Likelihood = "<<likelihood<<endl;
             gapEstimate++;
         }
 
-		cout<<"----##############MaxGapEstimate = "<<maxGapEstimate1<<"\t"<<"MaxLikelihood1 = "<<maxLikelihood1<<endl;
-        cout<<"----##############MaxGapEstimate = "<<maxGapEstimate2<<"\t"<<"MaxLikelihood2 = "<<maxLikelihood2<<endl;
+		cout<<"----##############MaxGapEstimate = "<<maxGapEstimate<<"\t"<<"MaxLikelihood = "<<maxLikelihood<<endl;
+		//cout<<"Best String = "<<bestString<<endl;
+		//printArr(maxDistance,maxDistance+maxGapEstimate);
 
-		if(updated == 0)
-		{
-		    for(int i=0;i<gapEstimate-1;i++)
-            {
-                for(int j=0;j<5;j++)
-                    temp_probs_gap[i][j] = probsGap[i+maxDistance][j];
-            }
-		}
+		finalize(maxGapEstimate);
 
-        finalize(maxGapEstimate2);//Previous way
-
-		this-> gapLength2 = maxGapEstimate1;
-		computeSequence(1);//New Bypassing way with Solution - 1
-
+		//printArr(maxDistance,maxDistance+maxGapEstimate);
 	}
     
     void freeGapFiller()
-    {
-		int maxSize=maxGap+2*maxDistance;
- 
-        for(long int i=0;i<maxSize;i++)
         {
-            delete [] countsGap[i];
-            delete [] probsGap[i];
-            delete [] errorProbsGap[i];
-        }
-        
-        delete [] countsGap;
-        delete [] probsGap;
-        delete [] errorProbsGap;
-        
-        delete [] concensus;
-        delete [] concensus2;
-        delete [] bestString;
-        delete [] secondBestString;
-    }
+    		int maxSize=maxGap+2*maxDistance;
+
+            for(long int i=0;i<maxSize;i++)
+            {
+                delete [] countsGap[i];
+                delete [] probsGap[i];
+                delete [] errorProbsGap[i];
+            }
+
+            delete [] countsGap;
+            delete [] probsGap;
+            delete [] errorProbsGap;
+
+            delete [] concensus;
+
+            delete [] bestString;
+            delete [] secondBestString;
+           }
 };
 
 
@@ -2670,6 +2578,7 @@ int main(int argc, char *argv[])
 
     //Open gapped contig file for reading
 	contigFileName=argv[1];
+	f = atoi(argv[2]);
 	contigFile=fopen(contigFileName, "r");
 	outFile=fopen("out.txt", "w");
 	if (contigFile == NULL)
@@ -2803,7 +2712,7 @@ int main(int argc, char *argv[])
 		processMapping(line1);
 		count+=1;
 	}
-    cout<<"Myout.sam file has "<<count<<" lines"<<endl;
+    //cout<<"Myout.sam file has "<<count<<" lines"<<endl;
 	fclose(mapFile);
 	fclose(summaryFile);
     
@@ -2811,7 +2720,7 @@ int main(int argc, char *argv[])
 
 	computeProbabilites();
     double val1 = computeLikelihood(mapFileName);
-    cout<<"likelihood //val 1  = "<<val1<<endl;
+   // cout<<"likelihood //val 1  = "<<val1<<endl;
     
     FILE * mappedInsertFile=fopen("mappedInserts.txt","w");
     
@@ -2828,16 +2737,16 @@ int main(int argc, char *argv[])
     }
 
     double insertMean=insertSum/(double)totalInserts;
-    cout<<"Total Inserts = "<<totalInserts<<endl;
+    //cout<<"Total Inserts = "<<totalInserts<<endl;
     
     fclose(mappedInsertFile);
     fclose(outFile);
     //	cout<<"after val 2"<<endl;
-    cout<<"insertCutoffMin = "<<insertCutoffMin<<" ...insertCutoffMax = "<<insertCutoffMax<<endl;
+    //cout<<"insertCutoffMin = "<<insertCutoffMin<<" ...insertCutoffMax = "<<insertCutoffMax<<endl;
     
     cout<<"insertThresholdMin = "<<insertThresholdMin<<"...insertThresholdMax = "<<insertThresholdMax<<endl;
     
-    cout<<"insertSizeMode = "<<insertSizeMode<<endl;
+    //cout<<"insertSizeMode = "<<insertSizeMode<<endl;
 
     /*for(int i=0;i<maxInsertSize;i++)
     {
@@ -2887,7 +2796,7 @@ int main(int argc, char *argv[])
     	}
     }
 
-    cout<<"gap_prob_cutoff = "<<gapProbCutOff<<endl;
+    //cout<<"gap_prob_cutoff in main = "<<gapProbCutOff<<endl;
     time_t now, end;
     time(&now);
 
@@ -2896,12 +2805,11 @@ int main(int argc, char *argv[])
     long int gapStart;
     int gapLength;
     int gapStringLength;
-    int gapStringLength2;
     int diff;
 
     char gapFileName[500];
     char *gapString=new char[MAX_GAP];
-    char *gapString2=new char[MAX_GAP];
+
 
     temp=new char[100];
     char *temp2=new char[100];
@@ -2909,19 +2817,18 @@ int main(int argc, char *argv[])
     int gapNo=0;
 
     gapInfoFile=fopen("gapInfo.txt","r");
-    gapOutFile=fopen("gapOut.txt","w");
-    gapOutFile2=fopen("gapOut2.txt","w");
+    gapOutFile=fopen("gapout.txt","w");
 
     while(fgets(line1, MAX_FILE_READ, gapInfoFile)!=NULL)
     {
-    	strcpy(gapFileName,"gaps_");
+    	strcpy(gapFileName,"Gaps/gaps_");
     	//itoa(gapNo,temp,10);
     	sprintf(temp2,"%d",gapNo);
-    	
+
     	strcat(gapFileName,temp2);
 
     	strcat(gapFileName,".sam");
-		gapNo++;
+
         
         temp=strtok(line1,"\t");
         gapContigNo=atoi(temp);
@@ -2936,24 +2843,22 @@ int main(int argc, char *argv[])
         gf.allocate(gapLength*2);
 
 		gf.initGapFiller(gapContigNo,gapStart,gapLength, gapFileName);
+
         gf.fillGap();
 
-		gapStringLength = gf.getConcensus(gapString,0);//gapstring variable gets filled using previous method
-		gapStringLength2 =  gf.getConcensus(gapString2,1);//gapstring variable gets filled using new method
+		gapStringLength = gf.getConcensus(gapString);
 
-		fprintf(gapOutFile,"%s\n",gapString);
-		fprintf(gapOutFile2,"%s\n",gapString2);
-        gf.freeGapFiller();
+		fprintf(gapOutFile,"%d\t%d\t%ld\t%d\t%d\t%s\n",gapNo,gapContigNo,gapStart,gapLength,gapStringLength,gapString);
 
-        cout<<"Previous Filled Gap String Length = "<<gapStringLength<<endl;
-        cout<<"New Filled Gap String Length = "<<gapStringLength2<<endl;
+		gf.freeGapFiller();
+
+		cout<<"Gap "<<gapNo<<" is done."<<endl;
+
+		gapNo++;
     }
-
+   
     fclose(gapInfoFile);
     fclose(gapOutFile);
-    fclose(gapOutFile2);
-    
-
     time(&end);
     
     double seconds = difftime(end,now);
@@ -2965,29 +2870,30 @@ int main(int argc, char *argv[])
     int nStart=0;
     long int nStartPos=0;
     int nCount=0,afterCount=0;
-    
-    
+
     long int offset=0, index=0;
     
-    gapOutFile=fopen("gapOut.txt","r");
+    gapOutFile=fopen("gapout.txt","r");
     
     filledContigFile=fopen("filledContigs.fa","w");
     
-    cout<<"Contig Length = "<<contigLengths[0]<<endl;
-    /*
+    cout<<"# of Contig = "<<noContigs<<endl;
+
     for(int i=0;i<noContigs;i++)
     {
-    	
+        //cout<<"Contig len = "<<contigLengths[i]<<endl;
     	contig=new char[contigLengths[i]+1];
+    	//cout<<"Allocation Done"<<endl;
     	offset=0;
     	index=0;
-    	
+
     	fprintf(filledContigFile,">%s\n",contigNames[i]);
-    	
+
         for(long int j=0;j<contigLengths[i];j++)
         {
             if(contigs[i][j]=='N' || contigs[i][j]=='n')
             {
+                //cout<<"found N"<<endl;
                 if(nStart==0)
                 {
                     nStart=1;
@@ -3003,11 +2909,10 @@ int main(int argc, char *argv[])
             {
             	if(nStart==1)
                 {
-                	
-                	if(nCount>=10)
+                	if(nCount>=1)
                 	{
-                   		fscanf(gapOutFile,"%d\t%d\t%ld\t%d\t%d\t%s",&gapNo,&gapContigNo,&gapStart,&gapLength,&gapStringLength,gapString);
-                    	 
+                   		fscanf(gapOutFile,"%d\t%d\t%ld\t%d\t%d\t%s\n",&gapNo,&gapContigNo,&gapStart,&gapLength,&gapStringLength,gapString);
+                    	//cout<<gapNo<<" "<<gapContigNo<<" "<<gapStart<<" "<<gapLength<<endl;
                     	contig[index]='\0'; 
 						fprintf(filledContigFile,"%s\n",contig);
                     	fprintf(filledContigFile,"%s\n",gapString);
@@ -3036,12 +2941,13 @@ int main(int argc, char *argv[])
         }
         contig[index]='\0';
     	fprintf(filledContigFile,"%s\n",contig);
-        
+        //cout<<"Done with Contig"<<i<< "successfully"<<endl;
+
     }
-   */
+
 	fclose(gapOutFile);
 	fclose(filledContigFile);
-    cout<<"Done with figbird.cpp successfully"<<endl;
+    cout<<"Figbird.cpp ends successfully"<<endl;
     
 	return 0;
 }
