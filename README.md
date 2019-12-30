@@ -15,7 +15,7 @@ GapProber depends on [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/manual.
 
 `sudo apt-get install bowtie2`
 
-You also need to have python3.7 and C++. To install them run
+You also need to have `python3.7` and `C++`. To install them run
 
 `sudo apt-get install build-essential` 
 
