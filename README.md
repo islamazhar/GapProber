@@ -11,7 +11,7 @@ To solve this problem, we have present a probabilistic method for filling the ga
 
 # How to run
 
-GapProber depends on [http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml](Bowtie2). B`owtie2` is available on Ubuntu deafult package manager. If your Ubuntu PC do not have bowtie2 you can install it simply by running 
+GapProber depends on [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/manual.html). `Bowtie2` is available on Ubuntu deafult package manager. If your Ubuntu PC do not have bowtie2 you can install it simply by running 
 
 `sudo apt-get install bowtie2`
 
