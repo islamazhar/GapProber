@@ -15,11 +15,11 @@ GapProber depends on [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/manual.
 
 `sudo apt-get install bowtie2`
 
-You also need to have python3.7 and C++ install. To install them run
+You also need to have python3.7 and C++. To install them run
 
 `sudo apt-get install build-essential` 
 
-To execute GapProber, cd to the clone repository and run
+To execute GapProber, cd to the cloned repository and run
 
  `GapProber.py --output <path to the output filled contig> --scaffolds <path to the scaffold file> --reads <fragment paried reads seperated by comma>`
 
