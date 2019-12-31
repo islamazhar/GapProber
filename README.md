@@ -11,8 +11,13 @@ To solve this problem, we have present a probabilistic method for filling the ga
 
 ## Running GapProber
 
-GapProber depends on [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/manual.html). `Bowtie2` is available on Ubuntu deafult package manager. If your Ubuntu PC do not have bowtie2 you can install it simply by running 
+GapProber depends on 
 
+- [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/manual.html).
+- python 3.7
+- C++ 
+
+`Bowtie2` is available on Ubuntu deafult package manager. If your Ubuntu PC do not have bowtie2 you can install it simply by running 
 `sudo apt-get install bowtie2`
 
 You also need to have `python3.7` and `C++`. To install them run
@@ -21,7 +26,10 @@ You also need to have `python3.7` and `C++`. To install them run
 
 To execute GapProber, cd to the cloned repository and run
 
- `GapProber.py --output <path to the output filled contig> --scaffolds <path to the scaffold file> --reads <fragment paried reads seperated by comma>`
+ `GapProber.py --output <path to the output filled contig> --scaffolds <path to the scaffold file> --reads <fragment paried reads seperated by commas>`
+ 
+ ## Notice
+ This is an ongoing work. If you are going to use any part of the code please let us know before using.
 
    
 
