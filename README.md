@@ -30,7 +30,7 @@ To execute GapProber, cd to the cloned repository and run
  `GapProber.py --output <path to the output filled contig> --scaffolds <path to the scaffold file> --reads <fragment paried reads seperated by commas>`
  
  ## Notice
- This is an ongoing work. If you are going to use any part of the code please let us know before using.
+ This is an ongoing work. If you want to use any part of the code please let us know before using.
 
    
 
