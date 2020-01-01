@@ -18,6 +18,7 @@ GapProber depends on
 - C++ 
 
 `Bowtie2` is available on Ubuntu deafult package manager. If your Ubuntu PC do not have bowtie2 you can install it simply by running 
+
 `sudo apt-get install bowtie2`
 
 You also need to have `python3.7` and `C++`. To install them run
