@@ -10,7 +10,8 @@ import datetime, random
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser = argparse.ArgumentParser(description='GapProber 1.0')
+    parser = argparse.ArgumentParser(description='GapProber is a software to fill up gaps in genome assemblies.')
+    parser.add_argument('--version', action='version', version='%(prog)s 1.0')
 
     # wrapper specific arguments
     parser.add_argument('-f', '--filled', required=False, type=str, help="<output file for filled scaffolds>", default=os.path.join(os.path.dirname(__file__), 'filled_contig.fastq'))
