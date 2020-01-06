@@ -31,7 +31,7 @@ You also need to have `python3.7` and `C++`. To install them run
 
 `sudo apt-get install build-essential` 
 
-Once you have `Bowtie2`, `Python 3.7`, and `C++` install,  to execute GapProber cd to the cloned repository and run the following command. 
+Once you have `Bowtie2`, `Python 3.7`, and `C++` installed,  to execute GapProber cd to the cloned repository and run the following command. 
 
  `Python GapProber.py --output <path to the output filled contig> --scaffolds <path to the scaffold file> --reads <fragment paried reads seperated by commas>`
  
