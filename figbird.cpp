@@ -2,9 +2,6 @@
 //  main.cpp
 //  gapFiller
 //
-//  Created by Atif Rahman on 2/7/16.
-//  Copyright (c) 2016 Atif Rahman. All rights reserved.
-//
 
 
 #include <iostream>
