@@ -2,8 +2,6 @@
 //  main.cpp
 //  gap
 //
-//  Created by Atif Rahman on 2/4/16.
-//  Copyright (c) 2016 Atif Rahman. All rights reserved.
 //
 
 #include <iostream>
