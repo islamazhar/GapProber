@@ -19,6 +19,7 @@ if __name__ == '__main__':
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument('-r', '--reads', type=str, help="<fragment reads>", required=True)
     requiredNamed.add_argument('-s', '--scaffolds', type=str, help="<scaffolds with gaps>", required=True)
+    
     #parser.print_help()
     args = vars(parser.parse_args())
     args['reads'] = args['reads'].split(',')
@@ -27,6 +28,11 @@ if __name__ == '__main__':
     subprocess.check_call(['mkdir', wd_new])
     os.chdir(wd_new)
     log = ""
+    
+    if not args['scaffolds'][0] == '/': args['scaffolds'] = os.path.join(wd,args['scaffolds'])
+    if not args['reads'][0][0] == '/':  args['reads'][0] = os.path.join(wd,args['reads'][0])
+    if not args['reads'][1][0] == '/':  args['reads'][1] = os.path.join(wd,args['reads'][1])
+    
     try:
         log = subprocess.check_call(['bowtie2-build', args['scaffolds'],wd_new+'/indexFile'])
         #print('bowtie2', '-x indexFile -1 '+args['reads'][0]+'  -2 '+args['reads'][1] +'  -S result.sam')
@@ -37,6 +43,7 @@ if __name__ == '__main__':
         log = subprocess.check_call(['./main.out', args['scaffolds'], '250'])
         log = subprocess.check_call(['./figbird.out', args['scaffolds'], ' 0', '250'])
         log = subprocess.check_call(['python', '../reference.py' ,'filledContigs.fa', '../'+args['filled']])
+        log = subprocess.check_call(['rm -rf', 'trash_me_*'])
     except:
         print(log)
         exit(1)
